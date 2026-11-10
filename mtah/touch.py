@@ -21,21 +21,21 @@ import numpy as np
 from . import balldet, balltrack, config
 
 DEFAULTS = {
-    "kink": 8.0,     # m/s change of the video ball's velocity across two frames
-    "reach": 1.5,    # m, the touching team's player this close to the ball ...
-    "margin": 0.5,   # m, ... and the other team's nearest at least this much further
-    "back": 3.0,     # s, how far a switch may move back to its touch
-    "hold": 1.0,     # m, old team's player this close to the ball ...
-    "free": 2.0,     # m, ... with the new team's further than this = old team still on it, stop
+    "kink": 4.0,     # m/s change of the video ball's velocity across two frames
+    "reach": 2.0,    # m, the touching team's player this close to the ball ...
+    "margin": 0.0,   # m, ... and the other team's nearest at least this much further
+    "back": 5.0,     # s, how far a switch may move back to its touch
+    "hold": 0.5,     # m, old team's player this close to the ball ...
+    "free": 3.0,     # m, ... with the new team's further than this = old team still on it, stop
     # a sharp touch by the team not in possession starts a possession of its own (v5)
     "start": 1,      # 0 = v4, switches are only moved
-    "start_kink": 6.0,
-    "start_reach": 2.0,
-    "angle": 120.0,  # degrees the ball turns at the touch; a header or clearance sends it back
-    "settle": 0.25,  # s after the touch during which the old team's control is not believed:
+    "start_kink": 4.0,
+    "start_reach": 3.0,
+    "angle": 60.0,  # degrees the ball turns at the touch; a header or clearance sends it back
+    "settle": 1.0,  # s after the touch during which the old team's control is not believed:
                      # the tracking ball lags the real one by a few frames and still sits at the
                      # feet of the player who just lost it
-    "min_len": 0.5,  # s, a possession that would end sooner than this is not written
+    "min_len": 1.0,  # s, a possession that would end sooner than this is not written
 }
 CACHE = os.path.join(config.CACHE_DIR, "video_ball.npz")
 SPAN = 2

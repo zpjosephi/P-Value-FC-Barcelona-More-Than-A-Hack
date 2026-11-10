@@ -27,21 +27,21 @@ import numpy as np
 from . import atd, config, touch
 
 DEFAULTS = {
-    "reach": 1.5,       # m, ball this close to a player counts as at his feet
-    "margin": 0.5,      # m, and the nearest opponent at least this much further away
+    "reach": 1.0,       # m, ball this close to a player counts as at his feet
+    "margin": 1.0,      # m, and the nearest opponent at least this much further away
     "max_speed": 9.0,   # m/s, faster than this the ball is travelling, nobody controls it
-    "confirm": 5,       # frames of control before the other team gets the ball
+    "confirm": 3,       # frames of control before the other team gets the ball
     "gap": 5,           # frames without evidence allowed inside one run of control
     "slow": 1.6,        # m/s, player speed (see fast) below this ...
-    "slow_for": 2.0,    # s, ... for this long means the ball is dead
+    "slow_for": 4.0,    # s, ... for this long means the ball is dead
     "resume": 2.6,      # m/s, speed back above this ends it
-    "lead": 1.0,        # s, the slowdown trails the whistle, so D starts this much earlier
+    "lead": 2.0,        # s, the slowdown trails the whistle, so D starts this much earlier
     "out_margin": 0.5,  # m beyond the line before a tracked ball counts as out
-    "kick": 6.0,        # m/s, ball this fast after it sat still or went out = restart taken
-    "settle": 2.0,      # s, no restart is looked for sooner than this after the ball went out
+    "kick": 4.0,        # m/s, ball this fast after it sat still or went out = restart taken
+    "settle": 1.0,      # s, no restart is looked for sooner than this after the ball went out
     "restart": 1,       # 1 = end D at the kick of a ball that sat still, 0 = wait for the players
     "still": 1.0,       # s the ball has to sit still before that kick
-    "seed": 2.0,        # m, after a restart the nearest team within this takes the ball
+    "seed": 3.0,        # m, after a restart the nearest team within this takes the ball
     "spot": 1.5,        # m from the centre spot where a slow tap already counts (kick-off)
     "fast": 1,          # 1 = watch the fastest quarter of the players, 0 = the median one (v1, v2)
     "veto": 0.3,        # share of the first veto_for s with a player on the ball that cancels a slowdown
@@ -51,7 +51,7 @@ DEFAULTS = {
     "touch_start": 1,   # 1 = a sharp video touch by the other team starts a possession (v5), 0 = v4
     "fake": 6.0,        # s, a restart kick after which nobody gets going for this long was not the
                         # restart (ball handed back, keeper placing it); 0 = off
-    "fake_pace": 1.75,  # m/s, "getting going" = the fast quarter's pace reaching this
+    "fake_pace": 2.0,  # m/s, "getting going" = the fast quarter's pace reaching this
     "gk_far": 50.0,     # m, a keeper's point further than this from his own goal is a swapped
                         # track sitting on somebody else (often the other keeper); 0 = keep
 }

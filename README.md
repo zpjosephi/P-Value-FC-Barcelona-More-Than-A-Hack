@@ -38,13 +38,25 @@ redo it, download the model to `cache/models/`, install torch and ultralytics, t
 
 ## Where the constants come from
 
-The organisers' clarification of November 2026 forbids tuning on the ground truth or on the
-provided video, and forbids hand labels on this match. This code was started before that email.
-What we changed because of it:
+The numeric constants in `DEFAULTS` (`mtah/rules.py`, `mtah/touch.py`) were selected by
+`tools/tune_external.py` on Sample Games 1 and 2 of Metrica Sports' public sample data
+(github.com/metrica-sports/sample-data, used with acknowledgement as its README asks). Possession
+labels there are derived from the games' own event data. The search starts from the middle of each
+grid and does not use BAR-ATH. Random holes are punched in the sample ball because its tracking is
+cleaner than BAR-ATH's. `gk_far` (a keeper more than 50 m from his own goal is a bad track) and
+`veto_seen` were not searched.
+
+The sample games have no video, so the touch constants were selected on their tracking ball, which
+is not the same signal as the detector's ball path on BAR-ATH.
+
+History, stated plainly. The organisers' clarification of November 2026 forbids tuning on the
+ground truth or on the provided video, and forbids hand labels on this match. This project started
+before that email, and earlier versions did those things. Because of it:
 
 - A whistle detector trained on whistles we marked by ear was removed.
 - Hand-labelled clips are no longer used for anything and are not in this repo.
+- All constants above were re-selected on external data, replacing the earlier values.
 
-What is still open: the numeric constants in `DEFAULTS` (`mtah/rules.py`, `mtah/touch.py`) were
-chosen earlier while looking at scores on the public ground truth and on our hand-labelled clips.
-They have not yet been re-selected on external data.
+The shape of the rules (switch on the first touch, a loose ball stays with the last team, restart
+to the kicker, a ball handed back is not a restart) came from watching the match and studying the
+public ground truth, including where earlier versions went wrong on it.

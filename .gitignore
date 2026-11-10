@@ -8,3 +8,4 @@ submissions/
 __pycache__/
 *.py[cod]
 .venv/
+tune.log
