@@ -33,7 +33,7 @@ first touch, and a sharp turn of the ball by the team not in possession starts a
 `cache/ball_det/` holds the per-frame ball boxes from `tools/detect_ball.py`, so the GPU step
 (about 11 hours on an RTX 2060) does not have to be repeated. The detector is
 `football-ball-detection.pt` from github.com/roboflow/sports (MIT), trained on other footage. To
-redo it, download the model to `cache/models/`, install torch and ultralytics, then run
+redo it, download the model to `cache/models/`, `pip install -r requirements-gpu.txt` (torch built for CUDA 12.1), then run
 `python tools/detect_ball.py --all`.
 
 ## Where the constants come from
@@ -42,7 +42,7 @@ The numeric constants in `DEFAULTS` (`mtah/rules.py`, `mtah/touch.py`) were sele
 `tools/tune_external.py` on Sample Games 1 and 2 of Metrica Sports' public sample data
 (github.com/metrica-sports/sample-data, used with acknowledgement as its README asks). Possession
 labels there are derived from the games' own event data. The search starts from the middle of each
-grid and does not use BAR-ATH. Random holes are punched in the sample ball because its tracking is
+grid and does not use BAR-ATH. Sample Game 3 is held out (`--holdout`). Random holes are punched in the sample ball because its tracking is
 cleaner than BAR-ATH's. `gk_far` (a keeper more than 50 m from his own goal is a bad track) and
 `veto_seen` were not searched.
 

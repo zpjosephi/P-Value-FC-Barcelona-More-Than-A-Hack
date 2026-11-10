@@ -13,6 +13,7 @@ grid so that it does not inherit earlier values.
 import argparse
 import json
 import os
+import re
 import sys
 import warnings
 
@@ -145,6 +146,79 @@ class Game:
         return score.pm.evaluate(self.truth, score.pm.label_codes(pred))["spell_f1_mean"]
 
 
+class HeldOut(Game):
+    """Sample Game 3, in the EPTS format, kept out of the search to test what it picked."""
+
+    def __init__(self):
+        root = os.path.join(SAMPLE, "Sample_Game_3", "Sample_Game_3_")
+        meta = open(root + "metadata.xml", encoding="utf-8").read()
+        owner = dict(re.findall(r'<Player id="(\w+)" teamId="(\w+)"', meta))
+        channel = dict(re.findall(r'id="(player\d+)_x" playerId="(\w+)"', meta))
+        specs = meta.split("<DataFormatSpecification ")[1:]
+        # substitutions change which players each stretch of the file lists
+        layouts = [(int(re.search(r'startFrame="(\d+)"', s).group(1)), int(re.search(r'endFrame="(\d+)"', s).group(1)),
+                    re.findall(r'playerChannelId="(player\d+)_x"', s)) for s in specs]
+        order = list(dict.fromkeys(c for lay in layouts for c in lay[2]))
+        slot = {c: i for i, c in enumerate(order)}
+        teams = sorted(set(owner.values()))
+        team = np.array([teams.index(owner[channel[c]]) for c in order])
+        text = open(root + "tracking.txt").read().replace(":", ";")
+        rows = [line.split(";") for line in text.splitlines() if line]
+        n = max(int(r[0]) for r in rows) + 2
+        scale = np.array([LENGTH, WIDTH], np.float32)
+        xy = np.full((n, len(order), 2), np.nan, np.float32)
+        ball = np.full((n, 2), np.nan, np.float32)
+        for r in rows:
+            f = int(r[0])
+            lay = next(l[2] for l in layouts if l[0] <= f <= l[1])
+            cells = [c.split(",") for c in r[1:]]
+            pts = np.array(cells[:len(lay)], np.float32)
+            xy[f, [slot[c] for c in lay]] = pts * scale
+            ball[f] = np.array(cells[len(lay)][:2], np.float32) * scale
+        speed = np.full((n, len(order)), np.nan, np.float32)
+        speed[2:-2] = np.hypot(*(xy[4:] - xy[:-4]).transpose(2, 0, 1)) * config.FPS / 4
+        param = dict(re.findall(r"<Name>(\w+_half_\w+)</Name>\s*<Value>(\d+)</Value>", meta))
+        self.periods = {1: (int(param["first_half_start"]), int(param["first_half_end"])),
+                        2: (int(param["second_half_start"]), int(param["second_half_end"]))}
+        self.n = n
+        self.data = {"ball_xy": holes(ball, 3), "players_xy": xy, "players_speed": speed,
+                     "team": team, "keeper": np.zeros(len(team), bool)}
+        self.ball = holes(ball, 103).astype(float)
+        self.feat = None
+        events = json.load(open(root + "events.json", encoding="utf-8"))["data"]
+        letter = {teams[0]: "H", teams[1]: "A"}
+        marks, sets = [], set()
+        for e in events:
+            kind, start, end = e["type"]["name"], e["start"]["frame"], e["end"]["frame"] or e["start"]["frame"]
+            subs = e["subtypes"] or []
+            subs = [s["name"] for s in (subs if isinstance(subs, list) else [subs])]
+            who = letter.get((e.get("team") or {}).get("id"))
+            if kind == "SET PIECE":
+                sets.add(start)
+            if kind in ("BALL OUT", "FAULT RECEIVED"):
+                marks.append((start, "D"))
+            elif kind == "SHOT" and ("GOAL" in subs or "OUT" in subs):
+                marks.append((start, who))
+                marks.append((max(end, start + 1), "D"))
+            elif (kind in ON_BALL or kind == "CARRY") and who:
+                marks.append((start, who))
+        out = np.full(n, "X", dtype="<U1")
+        self.kick = {}
+        for p, (lo, hi) in self.periods.items():
+            inside = sorted(m for m in marks if lo <= m[0] <= hi)
+            self.kick[p] = inside[0][0]
+            out[lo:self.kick[p]] = "D"
+            dead = False
+            for k, (f, lab) in enumerate(inside):
+                nxt = inside[k + 1][0] if k + 1 < len(inside) else hi + 1
+                if lab == "D":
+                    dead = True
+                elif f in sets:
+                    dead = False
+                out[f:nxt] = "D" if dead else lab
+        self.truth = score.pm.label_codes(out)
+
+
 def total(games, rule_params, touch_params):
     touch.DEFAULTS.update(touch_params)
     return [g.score(rule_params) for g in games]
@@ -153,8 +227,18 @@ def total(games, rule_params, touch_params):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--holdout", action="store_true", help="score Sample Game 3, not searched")
     args = parser.parse_args()
     warnings.simplefilter("ignore", RuntimeWarning)
+    if args.holdout:
+        game = HeldOut()
+        t = game.truth
+        print("H/A/D", [int((t == c).sum()) for c in range(3)], "spells", int(((t[1:] != t[:-1]) & (t[1:] < 2)).sum()))
+        print("chosen constants", round(total([game], {}, {})[0], 4))
+        mid_r = {k: v[len(v) // 2] for k, v in RULE_GRID.items()}
+        mid_t = {k: v[len(v) // 2] for k, v in TOUCH_GRID.items()}
+        print("middle of grid  ", round(total([game], mid_r, mid_t)[0], 4))
+        sys.exit()
     games = [Game(1), Game(2)]
     if args.check:
         for g in games:
