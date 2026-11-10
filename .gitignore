@@ -1,0 +1,10 @@
+# match data and anything that shows it stays out of the repo
+cache/*
+!cache/ball_det/
+cache/ball_det/*
+!cache/ball_det/*.npz
+submissions/
+*.mp4
+__pycache__/
+*.py[cod]
+.venv/
