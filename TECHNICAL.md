@@ -36,6 +36,8 @@ Tried and dropped:
   replays and no frame mapping to the tactical video.
 - **Filling the tracking's ball holes from the video.** No gain.
 - **Jersey colour to catch swapped tracks.** Shadows made it discard correct points.
+- **A classifier deciding which touches start a possession**, trained on Sample Games 1 and 2 in
+  place of the fixed angle test. On held-out Game 3 it scored 0.569 against 0.577, so it was dropped.
 - **Public player detector with ByteTrack.** Positions agree with the tracking, but it has no teams
   and its identities break every few seconds.
 
