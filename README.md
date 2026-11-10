@@ -1,4 +1,4 @@
-# P-Value: More than a Hack 2027, Phase 1
+# P-Value FC: More than a Hack 2027, Phase 1
 
 Labels every frame of the BAR-ATH tactical video as H, A, D or X. Rule-based, no model is trained
 in this repository.
