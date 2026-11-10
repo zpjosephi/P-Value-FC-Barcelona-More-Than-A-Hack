@@ -96,7 +96,10 @@ write the code. No AI model was trained on the match data.
 See `README.md`. With the data bundle next to this repository:
 
     pip install -r requirements.txt
+    python tools/detect_ball.py --all    # once, GPU, about 11 hours, see README
     python run_rules.py
 
 This writes `submissions/submission.csv`, md5 `e397d8b04bb2aaf8129b742a72f5c360`. Two runs from an
-empty cache give the same file.
+empty cache (keeping the ball detections) give the same file. The detections are frame-level data
+derived from the video, so they are not in the public repository. We can provide our copy to the
+organisers on request.

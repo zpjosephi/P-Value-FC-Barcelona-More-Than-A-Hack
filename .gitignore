@@ -1,8 +1,5 @@
 # match data and anything that shows it stays out of the repo
-cache/*
-!cache/ball_det/
-cache/ball_det/*
-!cache/ball_det/*.npz
+cache/
 submissions/
 *.mp4
 __pycache__/

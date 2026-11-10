@@ -14,6 +14,7 @@ The match data is not in this repo. Put this folder next to the organisers' fold
       P-Value-FC-Barcelona-More-Than-A-Hack/
 
     pip install -r requirements.txt
+    # make the ball detections first, see below
     python run_rules.py
 
 The result is `submissions/submission.csv`. It is deterministic: two runs from an empty cache give
@@ -28,13 +29,18 @@ slowing down together, and ends at the restart kick.
 `mtah/touch.py` uses a ball path from the video to find touches. It moves a switch back to the
 first touch, and a sharp turn of the ball by the team not in possession starts a possession.
 
-## Intermediate files
+## Ball detections (run once, needs a GPU)
 
-`cache/ball_det/` holds the per-frame ball boxes from `tools/detect_ball.py`, so the GPU step
-(about 11 hours on an RTX 2060) does not have to be repeated. The detector is
-`football-ball-detection.pt` from github.com/roboflow/sports (MIT), trained on other footage. To
-redo it, download the model to `cache/models/`, `pip install -r requirements-gpu.txt` (torch built for CUDA 12.1), then run
-`python tools/detect_ball.py --all`.
+`run_rules.py` reads per-frame ball boxes from `cache/ball_det/`. They are frame-level data derived
+from the match video, so they are not published here. Make them once:
+
+    pip install -r requirements-gpu.txt     # torch built for CUDA 12.1
+    # download football-ball-detection.pt from github.com/roboflow/sports to cache/models/
+    python tools/detect_ball.py --all       # about 11 hours on an RTX 2060
+
+The detector is YOLOv8 (MIT), trained on other footage, run in FP32 with deterministic cuDNN. Boxes
+from an RTX 2060 and an RTX 3050 agreed to 0.0004 px. The organisers can have our copy of these
+intermediate files on request.
 
 ## Where the constants come from
 
