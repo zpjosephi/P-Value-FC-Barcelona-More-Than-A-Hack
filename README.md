@@ -13,7 +13,7 @@ The match data is not in this repo. Put this folder next to the organisers' fold
       more-than-a-hack-2027-GitHub/
       P-Value-FC-Barcelona-More-Than-A-Hack/
 
-    pip install -r requirements.txt
+    pip install -r requirements.txt         # Python 3.11, tested in a fresh virtualenv
     # make the ball detections first, see below
     python run_rules.py
 
