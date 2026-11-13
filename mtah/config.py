@@ -15,6 +15,14 @@ DATA_DIR = os.environ.get("MTAH_DATA_DIR") or os.path.join(ROOT, "MoreThanAHack"
 OFFICIAL_DIR = os.path.join(ROOT, "more-than-a-hack-2027-GitHub")
 CACHE_DIR = os.path.join(WORK, "cache")
 SUBMISSIONS_DIR = os.path.join(WORK, "submissions")
+
+# input size of the ball detector; its boxes live in a folder named after it, ball_det for 1280
+BALL_IMGSZ = 1280
+
+
+def ball_det_dir(imgsz=None):
+    imgsz = imgsz or BALL_IMGSZ
+    return os.path.join(CACHE_DIR, "ball_det" if imgsz == 1280 else "ball_det_{}".format(imgsz))
 FRAMES_DIR = os.path.join(WORK, "frames")
 
 PUBLIC_GT = os.path.join(OFFICIAL_DIR, "evaluation", "gt", "BAR-ATH_possession_gt_public.csv")

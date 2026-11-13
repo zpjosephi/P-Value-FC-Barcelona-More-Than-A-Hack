@@ -133,7 +133,7 @@ def jitter(ball, seed, sigma=0.11):
 
 
 class Game:
-    def __init__(self, number):
+    def __init__(self, number, sigma=0.11):
         self.data, self.periods, self.n = load(number)
         labels, self.kick = truth(number, self.periods, self.n)
         self.truth = score.pm.label_codes(labels)
@@ -141,7 +141,7 @@ class Game:
         # 90% against 59% of live frames), so holes are punched to match; the video ball gets its own
         full = self.data["ball_xy"]
         self.data["ball_xy"] = holes(full, number)
-        self.ball = jitter(holes(full, number + 100), number + 200)
+        self.ball = jitter(holes(full, number + 100), number + 200, sigma)
         self.feat = None
 
     def score(self, rule_params):
@@ -157,7 +157,7 @@ class Game:
 class HeldOut(Game):
     """Sample Game 3, in the EPTS format, kept out of the search to test what it picked."""
 
-    def __init__(self):
+    def __init__(self, sigma=0.11):
         root = os.path.join(SAMPLE, "Sample_Game_3", "Sample_Game_3_")
         meta = open(root + "metadata.xml", encoding="utf-8").read()
         owner = dict(re.findall(r'<Player id="(\w+)" teamId="(\w+)"', meta))
@@ -191,7 +191,7 @@ class HeldOut(Game):
         self.n = n
         self.data = {"ball_xy": holes(ball, 3), "players_xy": xy, "players_speed": speed,
                      "team": team, "keeper": np.zeros(len(team), bool)}
-        self.ball = jitter(holes(ball, 103), 203)
+        self.ball = jitter(holes(ball, 103), 203, sigma)
         self.feat = None
         events = json.load(open(root + "events.json", encoding="utf-8"))["data"]
         letter = {teams[0]: "H", teams[1]: "A"}
@@ -227,6 +227,106 @@ class HeldOut(Game):
         self.truth = score.pm.label_codes(out)
 
 
+IDSSE = os.path.join(config.ROOT, "ext-data", "idsse")
+
+
+def idsse_matches():
+    return sorted(f.split("_DFL-COM-")[1][:-4] for f in os.listdir(IDSSE)
+                  if f.startswith("DFL_04_03_positions_raw_observed") and f.endswith(".xml"))
+
+
+def read_idsse(match):
+    """Positions and the tracking provider's own ball status and possession, per frame."""
+    import xml.etree.ElementTree as ET
+
+    cache = os.path.join(IDSSE, "cache", match + "_v2.npz")
+    if os.path.exists(cache):
+        z = np.load(cache)
+        return {k: z[k] for k in z.files}
+    info = open(os.path.join(IDSSE, "DFL_02_01_matchinformation_DFL-COM-{}.xml".format(match)), encoding="utf-8").read()
+    home = re.search(r'HomeTeamId="([^"]+)"', info).group(1)
+    path = os.path.join(IDSSE, "DFL_04_03_positions_raw_observed_DFL-COM-{}.xml".format(match))
+    tracks, ball, current = {}, {}, None
+    for event, el in ET.iterparse(path, events=("start", "end")):
+        if event == "start" and el.tag == "FrameSet":
+            team, person = el.get("TeamId"), el.get("PersonId")
+            current = None if team == "referee" else (team, person, el.get("GameSection"))
+        elif event == "end" and el.tag == "Frame" and current is not None:
+            n = int(el.get("N"))
+            if current[0] == "BALL":
+                ball[n] = (float(el.get("X")), float(el.get("Y")), int(el.get("BallStatus")), int(el.get("BallPossession")), float(el.get("Z")))
+            else:
+                tracks.setdefault((current[0], current[1]), {})[n] = (float(el.get("X")), float(el.get("Y")), float(el.get("S")) / 3.6)
+            el.clear()
+        elif event == "end" and el.tag == "FrameSet":
+            el.clear()
+    frames = np.array(sorted(ball))
+    lo = frames.min()
+    n = int(frames.max() - lo) + 2
+    keys = sorted(tracks)
+    xy = np.full((n, len(keys), 2), np.nan, np.float32)
+    speed = np.full((n, len(keys)), np.nan, np.float32)
+    for j, k in enumerate(keys):
+        f = np.array(list(tracks[k]))
+        v = np.array(list(tracks[k].values()), np.float32)
+        xy[f - lo, j] = v[:, :2] + [LENGTH / 2, WIDTH / 2]
+        speed[f - lo, j] = v[:, 2]
+    b = np.array([ball[f] for f in frames], np.float32)
+    bxy = np.full((n, 2), np.nan, np.float32)
+    bxy[frames - lo] = b[:, :2] + [LENGTH / 2, WIDTH / 2]
+    status = np.zeros(n, np.int8)
+    status[frames - lo] = b[:, 2]
+    owner = np.zeros(n, np.int8)
+    owner[frames - lo] = b[:, 3]
+    seen = np.zeros(n, bool)
+    seen[frames - lo] = True
+    height = np.full(n, np.nan, np.float32)
+    height[frames - lo] = b[:, 4]
+    out = {"xy": xy, "speed": speed, "team": np.array([0 if k[0] == home else 1 for k in keys]),
+           "ball": bxy, "status": status, "owner": owner, "seen": seen, "height": height}
+    os.makedirs(os.path.dirname(cache), exist_ok=True)
+    np.savez_compressed(cache, **out)
+    return out
+
+
+class Idsse(Game):
+    """A Bundesliga match from the IDSSE dataset (Bassek et al. 2025, CC BY 4.0). Its TRACAB
+    tracking carries the provider's per-frame ball status and owning team, the same kind of
+    corrected-tracking flags the organisers' ground truth comes from."""
+
+    def __init__(self, k, sigma=0.11):
+        z = read_idsse(idsse_matches()[k - 1])
+        n = len(z["status"])
+        self.n = n + 2
+        pad = lambda a, fill: np.concatenate((a, np.full((2,) + a.shape[1:], fill, a.dtype)))
+        xy, speed, ball = pad(z["xy"], np.nan), pad(z["speed"], np.nan), pad(z["ball"], np.nan)
+        status, owner, seen = pad(z["status"], 0), pad(z["owner"], 0), pad(z["seen"], False)
+        # the halves are the two runs of frames the ball is tracked on; each starts at its kick-off
+        edges = np.diff(np.concatenate(([0], seen.astype(np.int8), [0])))
+        runs = list(zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1) - 1))[:2]
+        self.periods = {i + 1: (int(a), int(b)) for i, (a, b) in enumerate(runs)}
+        self.kick = {p: int(a + np.argmax(status[a:b + 1] == 1)) for p, (a, b) in self.periods.items()}
+        labels = np.full(self.n, "X", dtype="<U1")
+        for p, (a, b) in self.periods.items():
+            seg = np.where(status[a:b + 1] == 1, np.where(owner[a:b + 1] == 1, "H", "A"), "D")
+            labels[a:b + 1] = seg
+        self.truth = score.pm.label_codes(labels)
+        self.data = {"ball_xy": holes(ball, 300 + k), "players_xy": xy, "players_speed": speed,
+                     "team": z["team"], "keeper": np.zeros(len(z["team"]), bool)}
+        self.ball = jitter(holes(ball, 400 + k), 500 + k, sigma)
+        self.height = pad(z["height"], np.nan)
+        self.feat = None
+
+
+def make(name, sigma):
+    """m1, m2: Metrica sample games 1-2; m3: Metrica sample game 3; d1..d7: IDSSE matches."""
+    if name in ("m1", "m2"):
+        return Game(int(name[1]), sigma)
+    if name == "m3":
+        return HeldOut(sigma)
+    return Idsse(int(name[1:]), sigma)
+
+
 def total(games, rule_params, touch_params):
     touch.DEFAULTS.update(touch_params)
     return [g.score(rule_params) for g in games]
@@ -236,18 +336,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--holdout", action="store_true", help="score Sample Game 3, not searched")
+    parser.add_argument("--sigmas", type=float, nargs="+", default=[0.11],
+                        help="detector errors (m) to search and test over; the search maximises their mean")
+    parser.add_argument("--search", nargs="+", default=["m1", "m2"], help="games the search runs on")
+    parser.add_argument("--test", nargs="+", default=["m3"], help="held-out games for --holdout")
     args = parser.parse_args()
     warnings.simplefilter("ignore", RuntimeWarning)
     if args.holdout:
-        game = HeldOut()
-        t = game.truth
+        held = [make(g, s) for s in args.sigmas for g in args.test]
+        t = held[0].truth
         print("H/A/D", [int((t == c).sum()) for c in range(3)], "spells", int(((t[1:] != t[:-1]) & (t[1:] < 2)).sum()))
-        print("chosen constants", round(total([game], {}, {})[0], 4))
+        got = total(held, {}, {})
+        names = ["{}@{}m".format(g, s) for s in args.sigmas for g in args.test]
+        print("chosen constants", " ".join("{} {:.4f}".format(a, v) for a, v in zip(names, got)), "mean {:.4f}".format(np.mean(got)))
         mid_r = {k: v[len(v) // 2] for k, v in RULE_GRID.items()}
         mid_t = {k: v[len(v) // 2] for k, v in TOUCH_GRID.items()}
-        print("middle of grid  ", round(total([game], mid_r, mid_t)[0], 4))
+        print("middle of grid   mean {:.4f}".format(np.mean(total(held, mid_r, mid_t))))
         sys.exit()
-    games = [Game(1), Game(2)]
+    games = [make(g, s) for s in args.sigmas for g in args.search]
     if args.check:
         for g in games:
             t = g.truth

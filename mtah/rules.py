@@ -24,7 +24,7 @@ import warnings
 
 import numpy as np
 
-from . import atd, config, touch
+from . import atd, config, deadmodel, touch
 
 DEFAULTS = {
     "reach": 1.0,       # m, ball this close to a player counts as at his feet
@@ -52,6 +52,10 @@ DEFAULTS = {
     "fake": 8.0,        # s, a restart kick after which nobody gets going for this long was not the
                         # restart (ball handed back, keeper placing it); 0 = off
     "fake_pace": 2.0,  # m/s, "getting going" = the fast quarter's pace reaching this
+    "dead_model": 1,    # 1 = dead ball from the classifier trained on Bundesliga matches
+                        # (mtah/deadmodel.py), 0 = the rule mask from dead_ball() below
+    "dead_thr": 0.5,    # classifier score above which a frame is dead
+    "dead_min": 2.0,    # s, shorter dead runs are pauses in play
     "gk_far": 50.0,     # m, a keeper's point further than this from his own goal is a swapped
                         # track sitting on somebody else (often the other keeper); 0 = keep
 }
@@ -278,7 +282,7 @@ def predict(data, params=None, feat=None):
     data = clean(data, p)
     feat = features(data) if feat is None else feat
     ev = evidence(feat, p)
-    dead = dead_ball(feat, p)
+    dead = deadmodel.mask(feat, p) if p["dead_model"] else dead_ball(feat, p)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         near = (np.nanargmin(np.nan_to_num(feat["dist"], nan=np.inf), axis=1), np.nanmin(feat["dist"], axis=1))

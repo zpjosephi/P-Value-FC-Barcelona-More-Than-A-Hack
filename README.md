@@ -23,8 +23,11 @@ the same file. The script also prints the score on the public 5 minutes.
 ## How it works
 
 `mtah/rules.py` reads the automatic tracking and holds possession with the last team until the
-other team shows control. Dead ball comes from the ball leaving the pitch or the fastest players
-slowing down together, and ends at the restart kick.
+other team shows control. Dead ball comes from `mtah/deadmodel.py`, a classifier trained on seven
+public Bundesliga matches (IDSSE, CC BY 4.0) whose tracking carries the provider's own ball status.
+It is shipped trained in `models/dead_ball.joblib`; `python tools/train_dead.py` rebuilds it from
+the IDSSE data placed in `ext-data/idsse/` next to this folder. The older rule mask is kept and
+comes back with `--set dead_model=0`.
 
 `mtah/touch.py` uses a ball path from the video to find touches. It moves a switch back to the
 first touch, and a sharp turn of the ball by the team not in possession starts a possession.
@@ -50,7 +53,9 @@ The numeric constants in `DEFAULTS` (`mtah/rules.py`, `mtah/touch.py`) were sele
 labels there are derived from the games' own event data. The search starts from the middle of each
 grid and does not use BAR-ATH. Sample Game 3 is held out (`--holdout`). Random holes are punched in the sample ball because its tracking is
 cleaner than BAR-ATH's, and the ball used for touches gets a 0.11 m error per frame, like a detector's. `gk_far` (a keeper more than 50 m from his own goal is a bad track) and
-`veto_seen` were not searched.
+`veto_seen` were not searched. The dead-ball classifier and every other change were judged on three
+matches kept out of all searching and training (Metrica game 3, IDSSE matches 6 and 7); see
+TECHNICAL.md.
 
 The sample games have no video, so the touch constants were selected on their tracking ball, which
 is not the same signal as the detector's ball path on BAR-ATH.

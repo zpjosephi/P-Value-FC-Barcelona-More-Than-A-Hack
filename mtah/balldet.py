@@ -13,7 +13,7 @@ import pandas as pd
 
 from . import config
 
-DET_DIR = os.path.join(config.CACHE_DIR, "ball_det")
+DET_DIR = config.ball_det_dir()
 MATRIX_COLUMNS = ["h{}{}".format(r, c) for r in range(3) for c in range(3)]
 _hom = None
 
