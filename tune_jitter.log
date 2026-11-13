@@ -1,0 +1,65 @@
+start 0.4101
+reach = 1.0 -> 0.4665
+margin = 1.0 -> 0.4678
+max_speed = 9.0 -> 0.4723
+confirm = 3 -> 0.4740
+slow = 1.6 -> 0.4957
+slow_for = 4.0 -> 0.4975
+lead = 2.0 -> 0.5028
+kick = 4.0 -> 0.5159
+settle = 1.0 -> 0.5194
+kink = 12.0 -> 0.5236
+reach = 1.5 -> 0.5244
+margin = 0.0 -> 0.5355
+hold = 0.5 -> 0.5382
+start_kink = 4.0 -> 0.5474
+angle = 60.0 -> 0.5755
+settle = 0.0 -> 0.5758
+settle = 1.0 -> 0.5784
+min_len = 1.0 -> 0.5787
+max_speed = 6.0 -> 0.5789
+confirm = 2 -> 0.5820
+resume = 2.0 -> 0.5837
+veto_for = 2.0 -> 0.5837
+fake = 8.0 -> 0.5845
+back = 5.0 -> 0.5867
+start_kink = 8.0 -> 0.5893
+start_reach = 3.0 -> 0.5934
+final [0.6039370078740157, 0.5828793774319067]
+{
+ "rules": {
+  "reach": 1.0,
+  "margin": 1.0,
+  "max_speed": 6.0,
+  "confirm": 2,
+  "gap": 5,
+  "slow": 1.6,
+  "slow_for": 4.0,
+  "resume": 2.0,
+  "lead": 2.0,
+  "out_margin": 0.5,
+  "kick": 4.0,
+  "settle": 1.0,
+  "still": 1.0,
+  "seed": 3.0,
+  "spot": 1.5,
+  "veto": 0.3,
+  "veto_for": 2.0,
+  "fake": 8.0,
+  "fake_pace": 2.0
+ },
+ "touch": {
+  "kink": 12.0,
+  "reach": 1.5,
+  "margin": 0.0,
+  "back": 5.0,
+  "hold": 0.5,
+  "free": 2.0,
+  "start": 1,
+  "start_kink": 8.0,
+  "start_reach": 3.0,
+  "angle": 60.0,
+  "settle": 1.0,
+  "min_len": 1.0
+ }
+}

@@ -124,6 +124,14 @@ def holes(ball, seed, share=0.33, mean_len=300):
     return out
 
 
+def jitter(ball, seed, sigma=0.11):
+    """The detector's ball is a box centre found again on every frame, so it is not smooth like the
+    sample tracking. Each frame gets its own error of about half a ball's diameter (0.11 m), set
+    from the ball's size and not from BAR-ATH."""
+    rng = np.random.default_rng(seed)
+    return ball.astype(float) + rng.normal(0.0, sigma, ball.shape)
+
+
 class Game:
     def __init__(self, number):
         self.data, self.periods, self.n = load(number)
@@ -133,7 +141,7 @@ class Game:
         # 90% against 59% of live frames), so holes are punched to match; the video ball gets its own
         full = self.data["ball_xy"]
         self.data["ball_xy"] = holes(full, number)
-        self.ball = holes(full, number + 100).astype(float)
+        self.ball = jitter(holes(full, number + 100), number + 200)
         self.feat = None
 
     def score(self, rule_params):
@@ -183,7 +191,7 @@ class HeldOut(Game):
         self.n = n
         self.data = {"ball_xy": holes(ball, 3), "players_xy": xy, "players_speed": speed,
                      "team": team, "keeper": np.zeros(len(team), bool)}
-        self.ball = holes(ball, 103).astype(float)
+        self.ball = jitter(holes(ball, 103), 203)
         self.feat = None
         events = json.load(open(root + "events.json", encoding="utf-8"))["data"]
         letter = {teams[0]: "H", teams[1]: "A"}

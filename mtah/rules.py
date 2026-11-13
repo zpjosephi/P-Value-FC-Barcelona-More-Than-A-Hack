@@ -29,12 +29,12 @@ from . import atd, config, touch
 DEFAULTS = {
     "reach": 1.0,       # m, ball this close to a player counts as at his feet
     "margin": 1.0,      # m, and the nearest opponent at least this much further away
-    "max_speed": 9.0,   # m/s, faster than this the ball is travelling, nobody controls it
-    "confirm": 3,       # frames of control before the other team gets the ball
+    "max_speed": 6.0,   # m/s, faster than this the ball is travelling, nobody controls it
+    "confirm": 2,       # frames of control before the other team gets the ball
     "gap": 5,           # frames without evidence allowed inside one run of control
     "slow": 1.6,        # m/s, player speed (see fast) below this ...
     "slow_for": 4.0,    # s, ... for this long means the ball is dead
-    "resume": 2.6,      # m/s, speed back above this ends it
+    "resume": 2.0,      # m/s, speed back above this ends it
     "lead": 2.0,        # s, the slowdown trails the whistle, so D starts this much earlier
     "out_margin": 0.5,  # m beyond the line before a tracked ball counts as out
     "kick": 4.0,        # m/s, ball this fast after it sat still or went out = restart taken
@@ -45,11 +45,11 @@ DEFAULTS = {
     "spot": 1.5,        # m from the centre spot where a slow tap already counts (kick-off)
     "fast": 1,          # 1 = watch the fastest quarter of the players, 0 = the median one (v1, v2)
     "veto": 0.3,        # share of the first veto_for s with a player on the ball that cancels a slowdown
-    "veto_for": 4.0,
+    "veto_for": 2.0,
     "veto_seen": 0.9,   # ... counted only when the tracking sees the ball this much of that time
     "touch": 1,         # 1 = move switches back to the video touch, 0 = v3
     "touch_start": 1,   # 1 = a sharp video touch by the other team starts a possession (v5), 0 = v4
-    "fake": 6.0,        # s, a restart kick after which nobody gets going for this long was not the
+    "fake": 8.0,        # s, a restart kick after which nobody gets going for this long was not the
                         # restart (ball handed back, keeper placing it); 0 = off
     "fake_pace": 2.0,  # m/s, "getting going" = the fast quarter's pace reaching this
     "gk_far": 50.0,     # m, a keeper's point further than this from his own goal is a swapped
