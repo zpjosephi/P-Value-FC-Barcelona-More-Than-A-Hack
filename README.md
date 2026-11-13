@@ -49,7 +49,7 @@ The numeric constants in `DEFAULTS` (`mtah/rules.py`, `mtah/touch.py`) were sele
 (github.com/metrica-sports/sample-data, used with acknowledgement as its README asks). Possession
 labels there are derived from the games' own event data. The search starts from the middle of each
 grid and does not use BAR-ATH. Sample Game 3 is held out (`--holdout`). Random holes are punched in the sample ball because its tracking is
-cleaner than BAR-ATH's. `gk_far` (a keeper more than 50 m from his own goal is a bad track) and
+cleaner than BAR-ATH's, and the ball used for touches gets a 0.11 m error per frame, like a detector's. `gk_far` (a keeper more than 50 m from his own goal is a bad track) and
 `veto_seen` were not searched.
 
 The sample games have no video, so the touch constants were selected on their tracking ball, which
