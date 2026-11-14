@@ -16,8 +16,9 @@ OFFICIAL_DIR = os.path.join(ROOT, "more-than-a-hack-2027-GitHub")
 CACHE_DIR = os.path.join(WORK, "cache")
 SUBMISSIONS_DIR = os.path.join(WORK, "submissions")
 
-# input size of the ball detector; its boxes live in a folder named after it, ball_det for 1280
-BALL_IMGSZ = 1280
+# input size of the ball detector; its boxes live in a folder named after it, ball_det for 1280,
+# the earlier setting
+BALL_IMGSZ = 1920
 
 
 def ball_det_dir(imgsz=None):
