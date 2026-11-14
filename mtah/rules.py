@@ -24,7 +24,7 @@ import warnings
 
 import numpy as np
 
-from . import atd, config, deadmodel, touch
+from . import atd, config, deadmodel, possmodel, touch
 
 DEFAULTS = {
     "reach": 1.0,       # m, ball this close to a player counts as at his feet
@@ -56,6 +56,9 @@ DEFAULTS = {
                         # (mtah/deadmodel.py), 0 = the rule mask from dead_ball() below
     "dead_thr": 0.5,    # classifier score above which a frame is dead
     "dead_min": 2.0,    # s, shorter dead runs are pauses in play
+    "poss_model": 1,    # 1 = frames the control test leaves open go to the team a classifier
+                        # trained on Bundesliga matches is sure of (mtah/possmodel.py)
+    "poss_thr": 0.9,    # how sure it must be
     "gk_far": 50.0,     # m, a keeper's point further than this from his own goal is a swapped
                         # track sitting on somebody else (often the other keeper); 0 = keep
 }
@@ -282,6 +285,8 @@ def predict(data, params=None, feat=None):
     data = clean(data, p)
     feat = features(data) if feat is None else feat
     ev = evidence(feat, p)
+    if p["poss_model"]:
+        ev = possmodel.fill(ev, data, feat, p)
     dead = deadmodel.mask(feat, p) if p["dead_model"] else dead_ball(feat, p)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
